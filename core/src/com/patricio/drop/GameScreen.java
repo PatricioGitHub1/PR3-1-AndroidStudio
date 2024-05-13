@@ -9,6 +9,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -28,22 +29,26 @@ public class GameScreen implements Screen {
     Array<Rectangle> raindrops;
     long lastDropTime;
     int dropsGathered;
+    public static Texture backgroundTexture;
+    public static Sprite backgroundSprite;
 
     public GameScreen(final DropGame game) {
         this.game = game;
 
+        // create the camera and the SpriteBatch
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, 800, 480);
+
         // load the images for the droplet and the bucket, 64x64 pixels each
         dropImage = new Texture(Gdx.files.internal("droplet.png"));
         bucketImage = new Texture(Gdx.files.internal("bucket.png"));
-
+        backgroundTexture = new Texture("minecraft-rain.jpg");
+        backgroundSprite =new Sprite(backgroundTexture);
         // load the drop sound effect and the rain background "music"
         dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
         rainMusic = Gdx.audio.newMusic(Gdx.files.internal("rain.mp3"));
         rainMusic.setLooping(true);
 
-        // create the camera and the SpriteBatch
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, 800, 480);
 
         // create a Rectangle to logically represent the bucket
         bucket = new Rectangle();
@@ -92,7 +97,12 @@ public class GameScreen implements Screen {
         // begin a new batch and draw the bucket and
         // all drops
         game.batch.begin();
+        backgroundSprite.draw(game.batch);
         game.font.draw(game.batch, "Drops Collected: " + dropsGathered, 0, 480);
+        game.font.draw(game.batch, "Max Score: " + game.maxScore, 200, 480);
+        // fps
+        game.font.draw(game.batch, "FPS: "+ Gdx.graphics.getFramesPerSecond(), 400,480);
+
         game.batch.draw(bucketImage, bucket.x, bucket.y, bucket.width, bucket.height);
         for (Rectangle raindrop : raindrops) {
             game.batch.draw(dropImage, raindrop.x, raindrop.y);
@@ -128,12 +138,20 @@ public class GameScreen implements Screen {
         while (iter.hasNext()) {
             Rectangle raindrop = iter.next();
             raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-            if (raindrop.y + 64 < 0)
+            if (raindrop.y + 64 < 0) {
                 iter.remove();
+                System.out.println("AQUI SE DEBERIA PERDER LA PARTIDA");
+
+                game.setScreen(new EndGameScreen(game, dropsGathered));
+                dispose();
+            }
             if (raindrop.overlaps(bucket)) {
-                dropsGathered++;
-                dropSound.play();
-                iter.remove();
+                if ((raindrop.y + raindrop.height) > (bucket.y + bucket.height)) {
+                    dropsGathered++;
+                    dropSound.play();
+                    iter.remove();
+                }
+
             }
         }
     }
