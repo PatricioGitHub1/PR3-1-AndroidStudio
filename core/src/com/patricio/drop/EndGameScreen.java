@@ -34,7 +34,7 @@ public class EndGameScreen implements Screen {
     public EndGameScreen(final DropGame game1, int drops) {
         this.game = game1;
         this.gatheredDrops = drops;
-        // create the camera and the SpriteBatch
+
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 800, 480);
 
@@ -42,33 +42,46 @@ public class EndGameScreen implements Screen {
         winSound = Gdx.audio.newMusic(Gdx.files.internal("win-sound.mp3"));
         loseSound = Gdx.audio.newMusic(Gdx.files.internal("lose-sound.mp3"));
         backgroundTexture = new Texture("minecraft-desert.jpg");
-        backgroundSprite =new Sprite(backgroundTexture);
+        backgroundSprite = new Sprite(backgroundTexture);
+
         Label.LabelStyle labelStyle = new Label.LabelStyle();
         BitmapFont font = new BitmapFont();
         font.getData().setScale(2);
         labelStyle.font = font;
         labelStyle.fontColor = Color.WHITE;
-        setButton();
+
         endGameLabel = new Label("", labelStyle);
         // Calculate the height for text and button
         float visibleHeight = Gdx.graphics.getHeight() * 0.15f;
         float startY = (Gdx.graphics.getHeight() - visibleHeight) / 2f;
 
-        endGameLabel.setPosition((Gdx.graphics.getWidth() - endGameLabel.getWidth()) / 2f, startY + visibleHeight - endGameLabel.getHeight());
         endGameLabel.setAlignment(Align.center); // Center the text
+        endGameLabel.setPosition((Gdx.graphics.getWidth() - endGameLabel.getWidth()) / 2f, startY + visibleHeight - endGameLabel.getHeight());
         stage.addActor(endGameLabel);
+
+        setButton();
+        playAgainButton.setPosition((Gdx.graphics.getWidth() - playAgainButton.getWidth()) / 2f, (Gdx.graphics.getHeight() - playAgainButton.getHeight()) / 2f - endGameLabel.getHeight() - 20); // Adjust the button position to be below the text
+
         // si superem el max score:
         if (gatheredDrops > game.maxScore) {
             surpassedMaxScore = true;
             game.maxScore = gatheredDrops;
-            endGameLabel.setText("Congratulations for beating your last High Score!\n\nNew High Score: "+game.maxScore);
-
+            endGameLabel.setText("Congratulations for beating your last High Score!\nNew High Score: " + game.maxScore);
             winSound.play();
         } else {
             surpassedMaxScore = false;
             endGameLabel.setText("Unfortunately, you could not beat the previous High Score...");
             loseSound.play();
         }
+
+        playAgainButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                // Handle button click
+                game.setScreen(new GameScreen(game)); // Example: Go to GameScreen again
+                dispose();
+            }
+        });
 
     }
 
@@ -82,20 +95,12 @@ public class EndGameScreen implements Screen {
         BitmapFont bitFont = new BitmapFont();
         bitFont.getData().setScale(2);
         style.font = bitFont;
-        playAgainButton = new TextButton("Play Again", style);
-        playAgainButton.setPosition((Gdx.graphics.getWidth() - playAgainButton.getWidth()) / 2f, (Gdx.graphics.getHeight() - playAgainButton.getHeight()) / 2f);
-        playAgainButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                // Handle button click
-                game.setScreen(new GameScreen(game)); // Example: Go to GameScreen again
-                dispose();
-            }
-        });
 
+        playAgainButton = new TextButton("Play Again", style);
         stage.addActor(playAgainButton);
         Gdx.input.setInputProcessor(stage);
     }
+
     @Override
     public void show() {
 
@@ -111,7 +116,6 @@ public class EndGameScreen implements Screen {
 
         game.batch.begin();
         backgroundSprite.draw(game.batch);
-
         game.batch.end();
 
         stage.act(delta);
